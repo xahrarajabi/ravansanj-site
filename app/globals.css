@@ -1,0 +1,159 @@
+@import "tailwindcss";
+
+/* ─── روان‌سنج design tokens ─── */
+:root {
+  --background: #f3f7fb;
+  --foreground: #1e3348;
+  --bg: #f3f7fb;
+  --surface: #ffffff;
+  --card: #ffffff;
+  --primary: #5b8fb8;
+  --primary-dark: #4a7aa0;
+  --primary-soft: rgba(107, 158, 196, 0.12);
+  --secondary: #8fadc4;
+  --text: #1e3348;
+  --text-secondary: #5c7388;
+  --muted: #5c7388;
+  --neutral: #eaf1f7;
+  --line: #d5e2ec;
+  --cta: #6b9ec4;
+  --cta-dark: #5589ad;
+  --subnav: #1e3348;
+  --success: #5a9a86;
+  --warning: #c4a35a;
+  --danger: #c47a7a;
+  --shadow: 0 1px 2px rgba(30, 51, 72, 0.04), 0 12px 32px -8px rgba(30, 51, 72, 0.08);
+  --radius: 1.25rem;
+  --header-bg: rgba(243, 247, 251, 0.85);
+}
+
+[data-theme="dark"] {
+  --background: #161e2a;
+  --foreground: #e6eef5;
+  --bg: #161e2a;
+  --surface: #1e2838;
+  --card: #1e2838;
+  --primary: #8bb4d4;
+  --primary-dark: #a0c4de;
+  --primary-soft: rgba(139, 180, 212, 0.16);
+  --secondary: #7a9ab0;
+  --text: #e6eef5;
+  --text-secondary: #9aadb8;
+  --muted: #9aadb8;
+  --neutral: #243044;
+  --line: #2f3f54;
+  --cta: #8bb4d4;
+  --cta-dark: #a0c4de;
+  --subnav: #e6eef5;
+  --success: #7ab89f;
+  --warning: #d4b86a;
+  --danger: #d49595;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.2), 0 16px 40px -12px rgba(0, 0, 0, 0.45);
+  --header-bg: rgba(22, 30, 42, 0.88);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-card: var(--card);
+  --color-primary: var(--primary);
+  --color-primary-dark: var(--primary-dark);
+  --color-primary-soft: var(--primary-soft);
+  --color-secondary: var(--secondary);
+  --color-text: var(--text);
+  --color-text-secondary: var(--text-secondary);
+  --color-muted: var(--muted);
+  --color-neutral: var(--neutral);
+  --color-line: var(--line);
+  --color-cta: var(--cta);
+  --color-cta-dark: var(--cta-dark);
+  --color-subnav: var(--subnav);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --font-sans: "BNazanin", "B Nazanin", "Vazirmatn", Tahoma, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  direction: rtl;
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: "BNazanin", "B Nazanin", "Vazirmatn", Tahoma, sans-serif;
+  margin: 0;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.7;
+  font-size: 1.05rem;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+::selection {
+  background: var(--primary-soft);
+  color: var(--text);
+}
+
+:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.likert-track {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.4rem;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+
+.page-shell {
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.soft-glow {
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(107, 158, 196, 0.18), transparent),
+    radial-gradient(ellipse 60% 40% at 100% 0%, rgba(168, 197, 216, 0.12), transparent),
+    var(--bg);
+}
+
+[data-theme="dark"] .soft-glow {
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(139, 180, 212, 0.12), transparent),
+    radial-gradient(ellipse 60% 40% at 100% 0%, rgba(90, 120, 150, 0.08), transparent),
+    var(--bg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

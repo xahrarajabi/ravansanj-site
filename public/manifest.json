@@ -1,0 +1,19 @@
+{
+  "name": "روان‌سنج",
+  "short_name": "روان‌سنج",
+  "description": "پلتفرم حرفه‌ای ارزیابی روان‌شناختی و خودشناسی",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f3f7fb",
+  "theme_color": "#6b9ec4",
+  "lang": "fa",
+  "dir": "rtl",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

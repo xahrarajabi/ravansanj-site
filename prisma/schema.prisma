@@ -1,0 +1,380 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  // Local: SQLite (file:./dev.db). Production: change provider to "postgresql"
+  // and set DATABASE_URL to your Postgres connection string.
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                 String              @id @default(cuid())
+  phone              String              @unique
+  name               String?
+  email              String?
+  avatarUrl          String?
+  role               String              @default("user") // user | admin
+  theme              String              @default("auto")
+  avatarGender       String              @default("other")
+  onboardedAt        DateTime?
+  notifySms          Boolean             @default(true)
+  notifyEmail        Boolean             @default(true)
+  createdAt          DateTime            @default(now())
+  sessions           TestSession[]
+  personalitySessions PersonalitySession[]
+  extraSessions      ExtraSession[]
+  demographics       DemographicAnswer[]
+  invitesSent        Invite[]            @relation("InviterInvites")
+  reports            Report[]
+  socialProfile      SocialProfile?
+  chatThreads        ChatThread[]
+  payments           Payment[]
+  giftCodesOwned     GiftCode[]          @relation("GiftOwner")
+  giftCodesRedeemed  GiftCode[]          @relation("GiftRedeemer")
+  notifications      Notification[]
+  feedbacks          Feedback[]
+  ratings            Rating[]
+  unlocks            ContentUnlock[]
+}
+
+model OtpCode {
+  id        String   @id @default(cuid())
+  phone     String
+  codeHash  String
+  attempts  Int      @default(0)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([phone])
+}
+
+model OtpRateLimit {
+  id          String   @id @default(cuid())
+  phone       String   @unique
+  count       Int      @default(0)
+  windowStart DateTime @default(now())
+}
+
+model DemographicQuestion {
+  id      String              @id @default(cuid())
+  order   Int
+  text    String
+  key     String              @unique
+  answers DemographicAnswer[]
+}
+
+model DemographicAnswer {
+  id         String              @id @default(cuid())
+  userId     String
+  user       User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  questionId String
+  question   DemographicQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  value      String
+
+  @@unique([userId, questionId])
+}
+
+model Test {
+  id          String        @id @default(cuid())
+  slug        String        @unique
+  title       String
+  description String
+  category    String        @default("general")
+  questions   Question[]
+  sessions    TestSession[]
+  invites     Invite[]
+}
+
+model Question {
+  id                   String                 @id @default(cuid())
+  testId               String
+  test                 Test                   @relation(fields: [testId], references: [id], onDelete: Cascade)
+  order                Int
+  text                 String
+  trait                String
+  perspective          String                 @default("self")
+  options              Option[]
+  answers              Answer[]
+  contributorResponses ContributorResponse[]
+
+  @@index([testId])
+}
+
+model Option {
+  id                   String                 @id @default(cuid())
+  questionId           String
+  question             Question               @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  text                 String
+  score                Int
+  answers              Answer[]
+  contributorResponses ContributorResponse[]
+
+  @@index([questionId])
+}
+
+/// Catalog tests (Big Five, relationships, etc.) — requires logged-in user
+model TestSession {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  testId      String
+  test        Test      @relation(fields: [testId], references: [id], onDelete: Cascade)
+  status      String    @default("in_progress")
+  startedAt   DateTime  @default(now())
+  completedAt DateTime?
+  answers     Answer[]
+  resultJson  String?
+  reports     Report[]
+
+  @@index([userId])
+  @@index([testId])
+}
+
+model Answer {
+  id         String      @id @default(cuid())
+  sessionId  String
+  session    TestSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  questionId String
+  question   Question    @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  optionId   String
+  option     Option      @relation(fields: [optionId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, questionId])
+  @@index([sessionId])
+}
+
+/// 16-type personality test — guest-first
+model PersonalitySession {
+  id          String    @id @default(cuid())
+  guestId     String
+  userId      String?
+  user        User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  status      String    @default("in_progress")
+  answersJson String    @default("{}")
+  resultJson  String?
+  typeCode    String?
+  startedAt   DateTime  @default(now())
+  completedAt DateTime?
+
+  @@index([guestId])
+  @@index([userId])
+}
+
+model ExtraSession {
+  id         String   @id @default(cuid())
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  guestId    String
+  slug       String
+  resultJson String
+  createdAt  DateTime @default(now())
+
+  @@index([guestId])
+  @@index([userId])
+}
+
+model Invite {
+  id           String                @id @default(cuid())
+  token        String                @unique
+  inviterId    String
+  inviter      User                  @relation("InviterInvites", fields: [inviterId], references: [id], onDelete: Cascade)
+  testId       String
+  test         Test                  @relation(fields: [testId], references: [id], onDelete: Cascade)
+  inviteePhone String
+  status       String                @default("pending")
+  createdAt    DateTime              @default(now())
+  completedAt  DateTime?
+  responses    ContributorResponse[]
+
+  @@index([inviterId])
+  @@index([inviteePhone])
+}
+
+model ContributorResponse {
+  id         String   @id @default(cuid())
+  inviteId   String
+  invite     Invite   @relation(fields: [inviteId], references: [id], onDelete: Cascade)
+  questionId String
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  optionId   String
+  option     Option   @relation(fields: [optionId], references: [id], onDelete: Cascade)
+
+  @@unique([inviteId, questionId])
+}
+
+model Report {
+  id          String       @id @default(cuid())
+  userId      String
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sessionId   String?
+  session     TestSession? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+  type        String
+  title       String
+  payloadJson String
+  unlocked    Boolean      @default(true)
+  createdAt   DateTime     @default(now())
+
+  @@index([userId])
+}
+
+model SocialProfile {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  username    String   @unique
+  displayName String
+  bio         String   @default("")
+  visibility  String   @default("public")
+  traitsJson  String   @default("{}")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  followers   Follow[] @relation("Following")
+  following   Follow[] @relation("Follower")
+  likesGiven  Like[]   @relation("Liker")
+  likesRecv   Like[]   @relation("Liked")
+}
+
+model Follow {
+  id          String        @id @default(cuid())
+  followerId  String
+  followingId String
+  follower    SocialProfile @relation("Follower", fields: [followerId], references: [id], onDelete: Cascade)
+  following   SocialProfile @relation("Following", fields: [followingId], references: [id], onDelete: Cascade)
+  createdAt   DateTime      @default(now())
+
+  @@unique([followerId, followingId])
+}
+
+model Like {
+  id        String        @id @default(cuid())
+  likerId   String
+  likedId   String
+  liker     SocialProfile @relation("Liker", fields: [likerId], references: [id], onDelete: Cascade)
+  liked     SocialProfile @relation("Liked", fields: [likedId], references: [id], onDelete: Cascade)
+  createdAt DateTime      @default(now())
+
+  @@unique([likerId, likedId])
+}
+
+model ChatThread {
+  id        String        @id @default(cuid())
+  userId    String
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subject   String        @default("پشتیبانی میزون")
+  status    String        @default("open")
+  createdAt DateTime      @default(now())
+  messages  ChatMessage[]
+}
+
+model ChatMessage {
+  id        String     @id @default(cuid())
+  threadId  String
+  thread    ChatThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  sender    String
+  body      String
+  createdAt DateTime   @default(now())
+
+  @@index([threadId])
+}
+
+model Product {
+  id          String    @id @default(cuid())
+  slug        String    @unique
+  title       String
+  description String
+  priceToman  Int
+  kind        String
+  unlockKey   String?
+  metaJson    String    @default("{}")
+  active      Boolean   @default(true)
+  payments    Payment[]
+}
+
+model Payment {
+  id        String     @id @default(cuid())
+  userId    String
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId String?
+  product   Product?   @relation(fields: [productId], references: [id], onDelete: SetNull)
+  amount    Int
+  status    String     @default("pending")
+  authority String?    @unique
+  refId     String?
+  createdAt DateTime   @default(now())
+  paidAt    DateTime?
+  giftCodes GiftCode[]
+
+  @@index([userId])
+}
+
+model GiftCode {
+  id         String    @id @default(cuid())
+  code       String    @unique
+  productId  String?
+  ownerId    String?
+  owner      User?     @relation("GiftOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  redeemerId String?
+  redeemer   User?     @relation("GiftRedeemer", fields: [redeemerId], references: [id], onDelete: SetNull)
+  paymentId  String?
+  payment    Payment?  @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+  status     String    @default("active")
+  createdAt  DateTime  @default(now())
+  redeemedAt DateTime?
+}
+
+model ContentUnlock {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  key       String
+  createdAt DateTime @default(now())
+
+  @@unique([userId, key])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  body      String
+  href      String?
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model FaqItem {
+  id       String @id @default(cuid())
+  order    Int
+  question String
+  answer   String
+}
+
+model SiteContent {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  valueJson String
+  updatedAt DateTime @updatedAt
+}
+
+model Feedback {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  message   String
+  createdAt DateTime @default(now())
+}
+
+model Rating {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  testSlug  String?
+  score     Int
+  comment   String?
+  createdAt DateTime @default(now())
+}
